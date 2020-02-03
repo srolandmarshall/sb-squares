@@ -48,7 +48,7 @@ end
 
 def print_csv(squares_array, teams)
   top_row = teams[:afc]
-  top_row.unshift(teams[:afc_name]+" to the Right\n"+teams[:nfc_name]+" listed down")
+  top_row.unshift(teams[:afc_name]+" >>>>\n"+"vvv "+teams[:nfc_name]+" vvv")
   CSV.open('squares.csv','w') do |csv|
     csv << top_row
     count = 0
