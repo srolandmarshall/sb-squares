@@ -57,7 +57,7 @@ def print_csv(squares_array, teams)
   puts 'Printing Squares...'
   top_row = []
   nums = Array.new([*0..9])
-  top_row << "#{teams[:afc]}/#{teams[:nfc]}"
+  top_row << "Across: #{teams[:afc]}\nDown: #{teams[:nfc]}"
   top_row += nums
   CSV.open('squares.csv', 'w') do |csv|
     csv << top_row
