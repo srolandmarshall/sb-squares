@@ -5,7 +5,6 @@ require 'pry'
 def scores
   puts 'Who is the AFC contender?'
   afc_name = gets.strip
-
   puts 'Who is the NFC contender?'
   nfc_name = gets.strip
   { afc: afc_name, nfc: nfc_name }
@@ -69,8 +68,8 @@ def print_csv(squares_array, teams)
   end
 end
 
-def squares
-  teams = scores
+def cli
+  @teams = scores
   done = false
   until done
     puts 'Manual Entry or CSV? (type M or CSV)'
@@ -87,13 +86,16 @@ def squares
       puts 'Type either M or CSV'
     end
   end
-  squares_list = []
+end
+
+def squares(squares_list = [])
   @players_list.each do |player|
     squares_list += Array.new(player['sqs'].to_i, player['name'])
   end
   squares_list.shuffle!
   squares_array = squares_list.each_slice(10).to_a
-  print_csv(squares_array, teams)
+  print_csv(squares_array, @teams)
 end
 
+cli
 squares
