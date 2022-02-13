@@ -2,100 +2,103 @@ require 'csv'
 require 'roo'
 require 'pry'
 
-def scores
-  puts 'Who is the AFC contender?'
-  afc_name = gets.strip
-  puts 'Who is the NFC contender?'
-  nfc_name = gets.strip
-  { afc: afc_name, nfc: nfc_name }
-end
+class Squares
 
-def players
-  players_list = []
-  puts 'How Many Players?'
-  num_players = gets.strip.to_i
-  num_players.times do |index|
-    puts "Enter name for player #{index + 1}:"
-    player_name = gets.strip
-    puts 'How many squares?'
-    player_sqs = gets.strip.to_i
-    index += 1
-    players_list << { name: player_name, sqs: player_sqs }
+  attr_accessor :teams, :players_list
+
+  def initialize
+    @players_list = []
+    @teams = team_input
+    entry_type_input
+    squares
   end
-  players_list
-end
 
-def players_check(players_list)
-  players_list_accurate = false
-  until players_list_accurate
-    total_sqs = 0
-    players_list.each do |player|
-      total_sqs += player[:sqs]
-    end
-    if total_sqs != 100
-      puts "You don't have enough squares, do your math again"
-      players_list = players
-    else
-      players_list_accurate = true
-      return players_list
-    end
+  def count_error(previous_method = nil)
+    puts 'Wrong number of squares! Try whatever you just did again.'
+    Squares.method_defined?(previous_method) ? Squares.send(previous_method) : entry_type_input
   end
-end
 
-# returns a hash of players and their squares
-def import_csv(path)
-  players_list = {}
-  puts "Importing #{path}..."
-  sheet = CSV.read(path, headers: true)
-  sheet.each do |row|
-    players_list[row['name']] = row['sqs'].to_i
+  def team_input
+    puts 'Who is the AFC contender?'
+    afc_name = gets.strip
+    puts 'Who is the NFC contender?'
+    nfc_name = gets.strip
+    { afc: afc_name, nfc: nfc_name }
   end
-end
 
-def print_csv(squares_array, teams)
-  puts 'Printing Squares...'
-  top_row = []
-  nums = Array.new([*0..9])
-  top_row << "Across: #{teams[:afc]}\nDown: #{teams[:nfc]}"
-  top_row += nums
-  CSV.open('squares.csv', 'w') do |csv|
-    csv << top_row
-    count = 0
-    squares_array.each do |list|
-      csv << list.unshift(nums[count])
-      count += 1
-    end
-  end
-end
-
-def cli
-  @teams = scores
-  done = false
-  until done
+  def entry_type_input
     puts 'Manual Entry or CSV? (type M or CSV)'
     input = gets.strip
     case input
     when /M(ANUAL)?/i
-      @players_list = players
-      players_list = players_check(players_list)
-      done = true
+      @players_list = player_input
     when /CS?V?/i
       @players_list = import_csv('./players.csv')
-      done = true
     else
       puts 'Type either M or CSV'
     end
   end
-end
 
-def squares(squares_list = [])
-  @players_list.each do |player|
-    squares_list += Array.new(player['sqs'].to_i, player['name'])
+  # @params: players_list, {"name" => # of squares}
+  # returns the list of players list if there are 100 squares
+  # returns false if number of squares != 100
+  def players_check(players_list = {"name": -1}, previous_method = "entry_type_input")
+    # sum all values in players_list
+    puts "Checking player counts..."
+    players_list.values.inject(:+) == 100 ? players_list : count_error(previous_method)
   end
-  squares_list.shuffle!
-  squares_array = squares_list.each_slice(10).to_a
-  print_csv(squares_array, @teams)
+
+  # returns a hash of players or starts over if there's not enough squares
+  def player_input(players_list = {}, total_squares = 0)
+    puts 'Enter Player Name and Number of Squares'
+    loop do
+      puts 'Player Name:'
+      name = gets.strip
+      puts 'Number of Squares:'
+      squares = gets.strip.to_i
+      total_squares += squares
+      if squares <= 0
+        puts 'You need at least one square!'
+      else
+        players_list[name] = squares
+        break if total_squares >= 100
+      end
+    end
+    players_check(players_list, "player_input")
+  end
+
+  # @params: path: path to csv file
+  # returns a hash of players and their squares, or makes them start over if there's not enough squares
+  def import_csv(path)
+    players_list = {}
+    puts "Importing #{path}..."
+    CSV.read(path, headers: true).each do |row|
+      players_list[row['name']] = row['sqs'].to_i
+    end
+    players_check(players_list, "entry_type_input")
+  end
+
+  def print_csv(squares_array, teams = {afc: "AFC", nfc: "NFC"})
+    puts 'Printing Squares...'
+    nums = Array.new([*0..9])
+    CSV.open('squares.csv', 'w') do |csv|
+      csv << ["Across: #{teams[:afc]}\nDown: #{teams[:nfc]}"] + nums
+      count = 0
+      squares_array.each do |list|
+        csv << list.unshift(nums[count])
+        count += 1
+      end
+    end
+  end
+
+  def squares(squares_list = [])
+    @players_list.each do |k,v|
+      squares_list += Array.new(v, k)
+    end
+    squares_list.shuffle!
+    squares_array = squares_list.each_slice(10).to_a
+    print_csv(squares_array, @teams)
+  end
 end
 
-cli
-squares
+Squares.new
