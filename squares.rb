@@ -53,10 +53,6 @@ def import_csv(path)
   end
 end
 
-def import_csv_of_players
-  @sheet = import_csv('./players.csv')
-end
-
 def print_csv(squares_array, teams)
   puts 'Printing Squares...'
   top_row = []
@@ -85,7 +81,7 @@ def squares
       players_list = players_check(players_list)
       done = true
     when 'CSV'
-      @players_list = import_csv_of_players
+      @players_list = import_csv('./players.csv')
       done = true
     else
       puts 'Type either M or CSV'
