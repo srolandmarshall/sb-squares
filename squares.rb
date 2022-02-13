@@ -43,10 +43,14 @@ def players_check(players_list)
   end
 end
 
+# returns a hash of players and their squares
 def import_csv(path)
+  players_list = {}
   puts "Importing #{path}..."
-  sheet = Roo::Spreadsheet.open(path).sheet(0)
-  sheet.parse(headers: true).drop(1)
+  sheet = CSV.read(path, headers: true)
+  sheet.each do |row|
+    players_list[row['name']] = row['sqs'].to_i
+  end
 end
 
 def import_csv_of_players
@@ -89,9 +93,7 @@ def squares
   end
   squares_list = []
   @players_list.each do |player|
-    player['sqs'].to_i.times do |_sq|
-      squares_list << player['name']
-    end
+    squares_list += Array.new(player['sqs'].to_i, player['name'])
   end
   squares_list.shuffle!
   squares_array = squares_list.each_slice(10).to_a
