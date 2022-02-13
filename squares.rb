@@ -12,8 +12,8 @@ class Squares
   end
 
   def count_error(previous_method = nil)
-    puts 'Wrong number of squares! Try whatever you just did again.'
-    Squares.method_defined?(previous_method) ? Squares.send(previous_method) : entry_type_input
+    puts 'Wrong number of squares! Starting over.'
+    Squares.method_defined?(previous_method) ? public_send(previous_method) : entry_type_input
   end
 
   def team_input
