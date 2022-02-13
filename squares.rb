@@ -74,12 +74,12 @@ def cli
   until done
     puts 'Manual Entry or CSV? (type M or CSV)'
     input = gets.strip
-    case input.upcase
-    when 'M'
+    case input
+    when /M(ANUAL)?/i
       @players_list = players
       players_list = players_check(players_list)
       done = true
-    when 'CSV'
+    when /CS?V?/i
       @players_list = import_csv('./players.csv')
       done = true
     else
