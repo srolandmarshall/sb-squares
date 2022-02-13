@@ -50,6 +50,7 @@ class Squares
   def player_input(players_list = {}, total_squares = 0)
     puts 'Enter Player Name and Number of Squares'
     loop do
+      puts "Total Squares so far: #{total_squares}"
       puts 'Player Name:'
       name = gets.strip
       puts 'Number of Squares:'
