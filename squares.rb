@@ -1,6 +1,4 @@
 require 'csv'
-require 'roo'
-require 'pry'
 
 class Squares
 
