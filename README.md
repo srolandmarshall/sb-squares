@@ -54,7 +54,7 @@
 
 - It has error catching along the way, so you shouldn't be able to enter square totals that don't `== 100`. If you want blank squares, just enter a blank space (`" "`) for name and the number of blank squares desired (works the same for CSV and Manual entry).
 - Script will overwrite `squares.csv` that's in the same folder as it **without warning**. If you want to make multiple make sure you copy or rename your squares file when it's output. 
-- In case you didn't know, `CTRL+C` is how you exist most command line apps.
+- In case you didn't know, `CTRL+C` is how you exit most command line apps.
 
 
 ## Good luck, have fun, see you next February.
