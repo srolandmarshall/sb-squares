@@ -1,0 +1,137 @@
+#!/usr/bin/env ruby
+# simple CLI wrapper for Squares
+require_relative '../squares'
+require 'csv'
+
+def prompt(msg)
+  print msg
+  gets.strip
+end
+
+
+require 'optparse'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: bin/squares [options]"
+  opts.on('-c', '--csv [PATH]', 'Use CSV input (optional path)') do |path|
+    options[:csv] = path || './players.csv'
+  end
+  opts.on('--afc NAME', 'AFC team name') do |name|
+    options[:afc] = name
+  end
+  opts.on('--nfc NAME', 'NFC team name') do |name|
+    options[:nfc] = name
+  end
+  opts.on('-o', '--output PATH', 'Output CSV path (default squares.csv)') do |path|
+    options[:output] = path
+  end
+  opts.on('--name NAME', 'Optional name to append to generated filename') do |n|
+    options[:name] = n
+  end
+  opts.on('-h', '--help', 'Prints this help') do
+    puts opts
+    exit
+  end
+end.parse!
+
+afc = options[:afc]
+nfc = options[:nfc]
+if afc.nil? || nfc.nil?
+  puts "Who is the AFC contender?" if afc.nil?
+  afc ||= gets.strip
+  puts "Who is the NFC contender?" if nfc.nil?
+  nfc ||= gets.strip
+end
+teams = { afc: afc, nfc: nfc }
+
+mode = nil
+if options[:csv]
+  mode = 'CSV'
+else
+  loop do
+    puts 'Manual Entry or CSV? (type M or CSV)'
+    mode = gets.strip
+    break if mode =~ /M(ANUAL)?/i || mode =~ /CS?V?/i
+    puts 'Type either M or CSV'
+  end
+end
+
+players = {}
+if mode =~ /CS?V?/i
+  path = options[:csv] || begin
+    puts 'Path to CSV (default ./players.csv):'
+    input = gets.strip
+    input.empty? ? './players.csv' : input
+  end
+  CSV.read(path, headers: true).each do |row|
+    players[row['name']] = row['sqs'].to_i
+  end
+else
+  puts 'Enter Player Name and Number of Squares'
+  total = 0
+  loop do
+    puts "Total Squares so far: #{total}"
+    puts 'Player Name:'
+    name = gets.strip
+    puts 'Number of Squares:'
+    input = gets.strip
+    squares = input.to_i
+
+    if squares <= 0
+      puts 'You need at least one square!'
+      next
+    end
+
+    if total + squares > 100
+      # offer Re-enter or Start over
+      puts "This entry would make total #{total + squares}, which exceeds 100."
+      choice = nil
+      loop do
+        puts 'Re-enter the number (R) for this player or Start over (S)?'
+        choice = gets.strip
+        break if choice =~ /R/i || choice =~ /S/i
+        puts 'Type R or S'
+      end
+      if choice =~ /S/i
+        players = {}
+        total = 0
+        puts 'Starting over...'
+        next
+      else
+        # re-enter squares for this player
+        puts 'Number of Squares:'
+        retry_input = gets.strip
+        retry_squares = retry_input.to_i
+        if retry_squares <= 0
+          puts 'You need at least one square!'
+          next
+        end
+        squares = retry_squares
+        # if still over 100 after retry, loop will repeat
+      end
+    end
+
+    players[name] = squares
+    total += squares
+    break if total >= 100
+  end
+end
+
+if options[:name]
+  Squares.run(teams: teams, players_list: players, name: options[:name], output: options[:output])
+else
+  Squares.run(teams: teams, players_list: players, output: options[:output])
+end
+out_path = options[:output] || nil
+if out_path
+  puts "Done. Wrote #{out_path}"
+else
+  # compute default printed filename the same way Squares would
+  afc_s = Squares.sanitize(teams[:afc])
+  nfc_s = Squares.sanitize(teams[:nfc])
+  year = Time.now.year
+  base = "#{afc_s}v#{nfc_s}-#{year}"
+  base += "-#{Squares.sanitize(options[:name])}" if options[:name]
+  puts "Done. Wrote output/#{base}.csv"
+end

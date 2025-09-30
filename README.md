@@ -1,60 +1,74 @@
 # Super Squares
 
-## A Quick Ruby Script to Make Squares 
+## A Quick Ruby Script to Make Squares
 
 ### Only Requires Ruby!
 
 ## How to Run
+
 1. `git clone` this repo somewhere
 2. `ruby sb-squares/squares.rb`
-3. Follow the prompts.
-4. Prints out a `squares.csv` that should be openable in any spreadsheet software.
 
+# sb-squares
 
-**That's it!**
-## Entry Modes
-1. CSV
-   - Create a CSV in the same format as `players.csv` with two columns: `players` and `sqs`
-   - **OR**
-   - Create a spreadsheet like so
+Small CLI and library to generate Super Bowl squares grids and write them to CSV.
 
-      | players | sqs |
-      --------|------
-      | Player 1 | 10 |
-      | Player 2 | 10 |
-      | Player 3 | 10 |
-      | Player 4 | 10 |
+## Usage
 
-   - Export to CSV as `players.csv` in the same folder as the `squares.rb` file and overwrite the test file.
+Install dependencies:
 
+```bash
+bundle install
+```
 
-2. Manual Entry
-   - Enter Player name then number of squares desired
-   - Will automatically stop when total reaches 100
-   - Example:
-      ```
-      Manual Entry or CSV? (type M or CSV)
-      > M
-      Enter Player Name and Number of Squares
-      Total Squares so far: 0
-      Player Name:
-      > Sam
-      Number of Squares:
-      > 10
-      Total Squares so far: 10
-      Player Name:
-      > Matt   
-      Number of Squares:
-      > 10
-      Total Squares so far: 20
-      ....
-      ```
+Run tests:
 
-## Miscellaneous & Warnings
+```bash
+bundle exec rspec --format documentation
+```
 
-- It has error catching along the way, so you shouldn't be able to enter square totals that don't `== 100`. If you want blank squares, just enter a blank space (`" "`) for name and the number of blank squares desired (works the same for CSV and Manual entry).
-- Script will overwrite `squares.csv` that's in the same folder as it **without warning**. If you want to make multiple make sure you copy or rename your squares file when it's output. 
-- In case you didn't know, `CTRL+C` is how you exit most command line apps.
+## CLI
 
+Interactive:
 
-## Good luck, have fun, see you next February.
+```bash
+./bin/squares
+```
+
+Non-interactive (CSV input):
+
+```bash
+ruby bin/squares --csv=path/to/players.csv --afc="TeamA" --nfc="TeamB"
+```
+
+By default, output is written to the `output/` directory. If `--output` is provided, that path will be used exactly:
+
+```bash
+ruby bin/squares --csv=spec/fixtures/players.csv --afc=TeamA --nfc=TeamB --output=spec/out.csv
+```
+
+## Filename generation
+
+If `--output` is not provided, the CLI will generate a filename of the form:
+
+```
+output/{AFCTEAM}v{NFCTEAM}-{YEAR}[-{name}].csv
+```
+
+The optional `--name` flag will append a string to the generated filename (useful to avoid collisions).
+
+## Examples
+
+```bash
+ruby bin/squares --csv=spec/fixtures/players.csv --afc="Chiefs" --nfc="Eagles" --name=party
+# writes output/ChiefsvEagles-2025-party.csv
+```
+
+## Notes
+
+- The `output/` directory is gitignored to avoid committing generated files.
+- If you choose Manual entry (no `--csv`), the CLI preserves the interactive flows including the "Re-enter" or "Start over" options when a manual entry would exceed 100 squares.
+
+---
+
+If you'd like a README edit or additional examples (like how to craft a players CSV), tell me where to expand.
