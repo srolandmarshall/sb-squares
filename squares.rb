@@ -9,13 +9,8 @@ class Squares
   #   :teams => {afc: 'AFC', nfc: 'NFC'}
   #   :players_list => {'name' => count}
   def initialize(options = {})
-    @players_list = []
-    @teams = options[:teams] || team_input
-    # if players_list provided, use it, otherwise prompt/import
-    @players_list = options[:players_list] || begin
-      entry_type_input
-      @players_list
-    end
+    @players_list = options[:players_list]
+    @teams = options[:teams]
   end
 
   # Convenience runner to create and execute flow without auto-instantiation side-effects
@@ -23,6 +18,13 @@ class Squares
     name = options.delete(:name)
     output = options.delete(:output)
     instance = new(options)
+    if instance.teams.nil? || instance.teams[:afc].to_s.empty? || instance.teams[:nfc].to_s.empty? || instance.players_list.nil? || instance.players_list.empty?
+      if STDIN.tty?
+        instance.interactive!
+      else
+        raise 'Missing required inputs (teams and/or players). Provide flags/options or run in an interactive terminal.'
+      end
+    end
     # If output not provided, build a semi-unique filename: {AFCTEAM}v{NFCTEAM}-{YEAR}[-{name}].csv
     if output.nil?
       afc = instance.teams[:afc] || 'AFC'
@@ -64,6 +66,15 @@ class Squares
       @players_list = import_csv('./players.csv')
     else
       puts 'Type either M or CSV'
+    end
+  end
+
+  def interactive!
+    raise 'Interactive input is not available in this environment' unless STDIN.tty?
+    @teams ||= team_input
+    @players_list ||= begin
+      entry_type_input
+      @players_list
     end
   end
 

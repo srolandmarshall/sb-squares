@@ -43,8 +43,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with: { ruby-version: "3.3" }
-      - name: Install Tebako gem
-        run: gem install tebako
+      - name: Reset & update Homebrew (stabilize taps)
+        run: |
+          brew update-reset || true
+          brew update
+      - name: Install Tebako via Homebrew
+        run: |
+          brew tap tamatebako/tap
+          brew install tebako
       - name: Build macOS binary with Tebako
         run: |
           tebako press \
@@ -68,6 +74,6 @@ jobs:
           bundle config set path vendor/bundle
           bundle install --without development test
       - shell: bash
-        run: aibika bin/squares --console --output sb-squares-windows-x64.exe
+        run: aibika --no-dep-run bin/squares --console --output sb-squares-windows-x64.exe
       - uses: softprops/action-gh-release@v2
         with: { files: sb-squares-windows-x64.exe }
