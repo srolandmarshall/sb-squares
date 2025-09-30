@@ -16,9 +16,33 @@ jobs:
         with: { ruby-version: "3.3", bundler-cache: true }
       - run: bundle exec rspec --format documentation
 
+  prepare_release:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.set_tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set_tag
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+          else
+            ts=$(date -u +"%Y%m%d-%H%M%S")
+            echo "tag=v0.0.0-manual-${ts}" >> $GITHUB_OUTPUT
+          fi
+      - name: Create (or ensure) GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.set_tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: "sb-squares ${{ steps.set_tag.outputs.tag }}"
+          draft: false
+          prerelease: false
+
   # Linux binary via Tebako container
   linux:
-    needs: test
+    needs: [test, prepare_release]
     runs-on: ubuntu-latest
     container: { image: ghcr.io/tamatebako/tebako-ubuntu-20.04:latest }
     steps:
@@ -33,25 +57,35 @@ jobs:
             --output=sb-squares-linux-amd64 \
             --Ruby=3.3.7
       - uses: softprops/action-gh-release@v2
-        with: { files: sb-squares-linux-amd64 }
+        with:
+          tag_name: ${{ needs.prepare_release.outputs.tag }}
+          files: sb-squares-linux-amd64
+          fail_on_unmatched_files: false
 
   # macOS binary (Intel). Duplicate job on macos-14 for arm64 if you want both.
   macos:
-    needs: test
+    needs: [test, prepare_release]
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with: { ruby-version: "3.3" }
-      - name: Reset & update Homebrew (stabilize taps)
+      - name: Remove stale Tebako tap if present
+        run: brew untap tamatebako/tap || true
+      - name: Reset & update Homebrew
         run: |
           brew update-reset || true
           brew update
-      - name: Install Tebako via Homebrew
+      - name: Install build dependencies
         run: |
-          brew tap tamatebako/tap
-          brew install tebako
+          brew install cmake ninja pkg-config llvm autoconf automake libtool coreutils brotli zstd lz4 libarchive
+      - name: Install Tebako gem
+        run: gem install tebako
       - name: Build macOS binary with Tebako
+        env:
+          CC: /usr/local/opt/llvm/bin/clang
+          CXX: /usr/local/opt/llvm/bin/clang++
+          PATH: /usr/local/opt/llvm/bin:${PATH}
         run: |
           tebako press \
             --root=. \
@@ -59,11 +93,13 @@ jobs:
             --output=sb-squares-macos-amd64 \
             --Ruby=3.3.7
       - uses: softprops/action-gh-release@v2
-        with: { files: sb-squares-macos-amd64 }
+        with:
+          tag_name: ${{ needs.prepare_release.outputs.tag }}
+          files: sb-squares-macos-amd64
 
   # Windows EXE via Aibika
   windows:
-    needs: test
+    needs: [test, prepare_release]
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,4 +112,7 @@ jobs:
       - shell: bash
         run: aibika --no-dep-run bin/squares --console --output sb-squares-windows-x64.exe
       - uses: softprops/action-gh-release@v2
-        with: { files: sb-squares-windows-x64.exe }
+        with:
+          tag_name: ${{ needs.prepare_release.outputs.tag }}
+          files: sb-squares-windows-x64.exe
+          fail_on_unmatched_files: false
