@@ -1,0 +1,64 @@
+name: Release
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with: { ruby-version: "3.3", bundler-cache: true }
+      - run: bundle exec rspec --format documentation
+
+  # Linux binary via Tebako container
+  linux:
+    needs: test
+    runs-on: ubuntu-latest
+    container:
+      { image: ghcr.io/tamatebako/tebako:0.5.5-ubuntu-22.04-ruby-3.3-amd64 }
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          bundle config set path vendor/bundle
+          bundle install --without development test
+          tebako pack -e bin/squares -o sb-squares-linux-amd64 --root .
+      - uses: softprops/action-gh-release@v2
+        with: { files: sb-squares-linux-amd64 }
+
+  # macOS binary (Intel). Duplicate job on macos-14 for arm64 if you want both.
+  macos:
+    needs: test
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with: { ruby-version: "3.3" }
+      - run: brew install tamatebako/tap/tebako || brew install tebako
+      - run: |
+          bundle config set path vendor/bundle
+          bundle install --without development test
+          tebako pack -e bin/squares -o sb-squares-macos-amd64 --root .
+      - uses: softprops/action-gh-release@v2
+        with: { files: sb-squares-macos-amd64 }
+
+  # Windows EXE via Aibika
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with: { ruby-version: "3.3" }
+      - run: gem install aibika
+      - run: |
+          bundle config set path vendor/bundle
+          bundle install --without development test
+      - shell: bash
+        run: aibika bin/squares --console --output sb-squares-windows-x64.exe
+      - uses: softprops/action-gh-release@v2
+        with: { files: sb-squares-windows-x64.exe }
