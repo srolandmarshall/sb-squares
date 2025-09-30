@@ -19,14 +19,18 @@ jobs:
   linux:
     needs: test
     runs-on: ubuntu-latest
-    container:
-      { image: ghcr.io/tamatebako/tebako:0.5.5-ubuntu-22.04-ruby-3.3-amd64 }
+    container: { image: ghcr.io/tamatebako/tebako-ubuntu-20.04:latest }
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          bundle config set path vendor/bundle
-          bundle install --without development test
-          tebako pack -e bin/squares -o sb-squares-linux-amd64 --root .
+      - name: Allow git on mounted workspace
+        run: git config --global --add safe.directory $PWD
+      - name: Build Linux binary with Tebako
+        run: |
+          tebako press \
+            --root=. \
+            --entry-point=bin/squares \
+            --output=sb-squares-linux-amd64 \
+            --Ruby=3.3.7
       - uses: softprops/action-gh-release@v2
         with: { files: sb-squares-linux-amd64 }
 
@@ -38,11 +42,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with: { ruby-version: "3.3" }
-      - run: brew install tamatebako/tap/tebako || brew install tebako
-      - run: |
-          bundle config set path vendor/bundle
-          bundle install --without development test
-          tebako pack -e bin/squares -o sb-squares-macos-amd64 --root .
+      - name: Install Tebako gem
+        run: gem install tebako
+      - name: Build macOS binary with Tebako
+        run: |
+          tebako press \
+            --root=. \
+            --entry-point=bin/squares \
+            --output=sb-squares-macos-amd64 \
+            --Ruby=3.3.7
       - uses: softprops/action-gh-release@v2
         with: { files: sb-squares-macos-amd64 }
 
