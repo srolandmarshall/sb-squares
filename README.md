@@ -68,7 +68,3 @@ ruby bin/squares --csv=spec/fixtures/players.csv --afc="Chiefs" --nfc="Eagles" -
 
 - The `output/` directory is gitignored to avoid committing generated files.
 - If you choose Manual entry (no `--csv`), the CLI preserves the interactive flows including the "Re-enter" or "Start over" options when a manual entry would exceed 100 squares.
-
----
-
-If you'd like a README edit or additional examples (like how to craft a players CSV), tell me where to expand.
